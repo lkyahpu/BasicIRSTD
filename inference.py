@@ -52,20 +52,23 @@ def test():
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         net.load_state_dict(torch.load(opt.pth_dir, map_location=device)['state_dict'])
     net.eval()
-    transform1 = transforms.Compose([transforms.Resize((448, 448), antialias=True)])
+    transform1 = transforms.Compose([transforms.Resize((512, 512), antialias=True)])
 
     with torch.no_grad():
         for idx_iter, (img, size, img_dir) in tqdm(enumerate(test_loader)):
             if size[0] > 512 or size[1] > 512:
-                down = nn.Upsample(scale_factor=0.25, mode='bilinear', align_corners=True)
-                img = down(img)
+                # down = nn.Upsample(scale_factor=0.25, mode='bilinear', align_corners=True)
+                # img = down(img)
+                img = transform1(img)
             # img = transform1(img)
 
             img = Variable(img).cuda()
             pred = net.forward(img)
             if size[0] > 512 or size[1] > 512:
-                up = nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True)
-                pred = up(pred)
+                # up = nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True)
+                # pred = up(pred)
+                transform2 = transforms.Compose([transforms.Resize((size[0], size[1]), antialias=True)])
+                pred = transform2(pred)
             # transform2 = transforms.Compose([transforms.Resize((size[0], size[1]), antialias=True)])
             # pred = transform2(pred)
           
