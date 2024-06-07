@@ -56,18 +56,18 @@ def test():
 
     with torch.no_grad():
         for idx_iter, (img, size, img_dir) in tqdm(enumerate(test_loader)):
-            # if size[0] > 640 and size[1] > 640:
-                # down = nn.Upsample(scale_factor=0.25, mode='bilinear', align_corners=True)
-                # img = down(img)
-            img = transform1(img)
+            if size[0] > 640 and size[1] > 640:
+                down = nn.Upsample(scale_factor=0.25, mode='bilinear', align_corners=True)
+                img = down(img)
+            # img = transform1(img)
 
             img = Variable(img).cuda()
             pred = net.forward(img)
-            # if size[0] > 640 and size[1] > 640:
-            #     up = nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True)
-            #     pred = up(pred)
-            transform2 = transforms.Compose([transforms.Resize((size[0], size[1]), antialias=True)])
-            pred = transform2(pred)
+            if size[0] > 640 and size[1] > 640:
+                up = nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True)
+                pred = up(pred)
+            # transform2 = transforms.Compose([transforms.Resize((size[0], size[1]), antialias=True)])
+            # pred = transform2(pred)
           
             pred = pred[:, :, :size[0], :size[1]]
             ### save img
