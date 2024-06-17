@@ -30,7 +30,7 @@ parser.add_argument("--img_norm_cfg_std", default=None, type=float,
 parser.add_argument("--save_img", default=True, type=bool, help="save image of or not")
 parser.add_argument("--save_img_dir", type=str, default='./results/', help="path of saved image")
 parser.add_argument("--save_log", type=str, default='./log/', help="path of saved .pth")
-parser.add_argument("--threshold", type=float, default=0.75)
+parser.add_argument("--threshold", type=float, default=0.5)
 
 global opt
 opt = parser.parse_args()
@@ -56,29 +56,31 @@ def test():
 
     with torch.no_grad():
         for idx_iter, (img, size, img_dir) in tqdm(enumerate(test_loader)):
-            if size[0] > 512 or size[1] > 512:
-                # down = nn.Upsample(scale_factor=0.25, mode='bilinear', align_corners=True)
-                # img = down(img)
-                img = transform1(img)
-            # img = transform1(img)
+            if size[0] > 640 and size[1] > 640:
+              down = nn.Upsample(scale_factor=0.5, mode='bilinear', align_corners=True)
+              img = down(img)
+            if size[0] > 1000 or size[1] > 1000:
+              down = nn.Upsample(scale_factor=0.25, mode='bilinear', align_corners=True)
+              img = down(img)
 
             img = Variable(img).cuda()
             pred = net.forward(img)
-            if size[0] > 512 or size[1] > 512:
-                # up = nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True)
-                # pred = up(pred)
-                transform2 = transforms.Compose([transforms.Resize((size[0], size[1]), antialias=True)])
-                pred = transform2(pred)
-            # transform2 = transforms.Compose([transforms.Resize((size[0], size[1]), antialias=True)])
-            # pred = transform2(pred)
           
+            if size[0] > 640 and size[1] > 640:
+              up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+              pred = up(pred)
+
+            if size[0] > 1000 or size[1] > 1000:
+              up = nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True)
+              pred = up(pred)
+            
             pred = pred[:, :, :size[0], :size[1]]
             ### save img
             if opt.save_img == True:
-                img_save = transforms.ToPILImage()(((pred[0, 0, :, :] > opt.threshold).float()).cpu())
-                if not os.path.exists(opt.save_img_dir + opt.test_dataset_name + '/' + opt.model_name):
-                    os.makedirs(opt.save_img_dir + opt.test_dataset_name + '/' + opt.model_name)
-                img_save.save(opt.save_img_dir + opt.test_dataset_name + '/' + opt.model_name + '/' + img_dir[0] + '.png')
+              img_save = transforms.ToPILImage()(((pred[0, 0, :, :] > opt.threshold).float()).cpu())
+              if not os.path.exists(opt.save_img_dir + opt.test_dataset_name + '/' + opt.model_name):
+                  os.makedirs(opt.save_img_dir + opt.test_dataset_name + '/' + opt.model_name)
+              img_save.save(opt.save_img_dir + opt.test_dataset_name + '/' + opt.model_name + '/' + img_dir[0] + '.png')
 
     print('Inference Done!')
 
